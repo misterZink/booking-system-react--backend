@@ -1,104 +1,113 @@
-
-const axios = require('axios');
 const express = require("express");
 const app = express();
 const PORT = 3001;
-const router = express.Router();
-const bodyParser = require('body-parser');
-
 const cors = require("cors");
-
 var mysql = require('mysql');
-const { response } = require('express');
-
-const database = mysql.createPool({
-  host: "localhost",
-  user: "root",
-  password: "password",
-  database: "booking_system"
-});
-
 var corsOptions = {
-  origin: "http://localhost:3000"
+    origin: "http://localhost:3000"
 };
 
+const database = mysql.createPool({
+    host: "localhost",
+    user: "root",
+    password: "password",
+    database: "booking_system"
+});
+
 app.use(cors(corsOptions));
+
+
 // If you don't parse the body of the request then undefined will be returned
 app.use(express.json());
-app.use(express.urlencoded({ extended: false }));
+app.use(express.urlencoded({extended: false}));
+
+app.listen(PORT, () => {
+    console.log(`Server is running on port ${PORT}.`);
+});
 
 //Routes
 app.get("/", (req, res) => {
-  const sqlSelect = "SELECT * FROM  customers;"
-  database.query(sqlSelect, (err, result) => {
-    res.send(result)
-  })
+    const sqlSelect = "SELECT * FROM  customers;"
+    database.query(sqlSelect, (err, result) => {
+        res.send(result)
+    })
 });
 
-app.listen(PORT, () => {
-  console.log(`Server is running on port ${PORT}.`);
-});
+app.post("/bookcleaning", (req, res) => {
+    const customerID = req.body.customerID;
+    const bookingNumber = req.body.bookingNumber;
+    const startDateTime = req.body.startDateTime;
+    const adress = req.body.adress;
+    const serviceType = req.body.serviceType;
+    const price = req.body.price;
+    const paid = req.body.paid;
+    const isApproved = req.body.isApproved;
+    const status = req.body.status;
+    const message = req.body.message;
 
+    const bookingQuery = "INSERT INTO `bookings` " +
+        "(`customer_id`, `booking_number`, `start_date_time`, `adress`, `service_type`, `price`, `paid`, `is_approved`, `status`, `message`) " +
+        "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
 
-var connection = mysql.createConnection({
-  host: 'localhost',
-  user: 'root',
-  password: 'password',
-  database: 'booking_system'
+    database.query(bookingQuery, [customerID, bookingNumber, startDateTime, adress, serviceType, price, paid, isApproved, status, message],
+        (err, result) => {
+            if (err) console.log(err);
+            res.send("Booking done!");
+        })
 })
-connection.connect()
+
 
 app.post('/bookCustomer', function (req, res) {
-  console.log(req.body);
-  let userName = req.body.firstName + "." + req.body.lastName
-  
-  database.query(
-    "INSERT INTO customers\
-    (username, company_name, org_number, personal_id_number, first_name, last_name, phone_number)\
-    VALUES(?, ?, ?, ?, ?, ?, ?)", [
-      userName,
-      req.body.Company, 
-      req.body.CompanyID, 
-      req.body.socialID,
-      req.body.firstName,
-      req.body.lastName,
-      req.body.phoneNumber,
-      req.body.email
-    ],
-    (err, result) => {
-      if (err) {
-        console.log(err);
-      } else {
-        res.send("Values Inserted");
-      }
-    }
-  );
+    console.log(req.body);
+    let userName = req.body.firstName + "." + req.body.lastName
+
+    database.query(
+        "INSERT INTO customers\
+        (username, company_name, org_number, personal_id_number, first_name, last_name, phone_number)\
+        VALUES(?, ?, ?, ?, ?, ?, ?)", [
+            userName,
+            req.body.Company,
+            req.body.CompanyID,
+            req.body.socialID,
+            req.body.firstName,
+            req.body.lastName,
+            req.body.phoneNumber,
+            req.body.email
+        ],
+        (err, result) => {
+            if (err) {
+                console.log(err);
+            } else {
+                res.send("Values Inserted");
+            }
+        }
+    );
 });
 
 app.post('/registerCustomer', function (req, res) {
-  console.log(req.body);
-  let userName = req.body.firstName + "." + req.body.lastName
+    console.log(req.body);
+    let userName = req.body.firstName + "." + req.body.lastName
 
-  database.query(
-    "INSERT INTO customers\
-    (username, company_name, company_or_private, org_number, personal_id_number, first_name, last_name, phone_number, password)\
-    VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?)", [
-      userName,
-      req.body.Company, 
-      req.body.customerType,
-      req.body.CompanyID, 
-      req.body.socialID,
-      req.body.firstName,
-      req.body.lastName,
-      req.body.phoneNumber,
-      req.body.password
-    ],
-    (err, result) => {
-      if (err) {
-        console.log(err);
-      } else {
-        res.send("Values Inserted");
-      }
-    }
-  );
+    database.query(
+        "INSERT INTO customers\
+        (username, company_name, company_or_private, org_number, personal_id_number, first_name, last_name, phone_number, password)\
+        VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?)", [
+            userName,
+            req.body.Company,
+            req.body.customerType,
+            req.body.CompanyID,
+            req.body.socialID,
+            req.body.firstName,
+            req.body.lastName,
+            req.body.phoneNumber,
+            req.body.password
+        ],
+        (err, result) => {
+            if (err) {
+                console.log(err);
+            } else {
+                res.send("Values Inserted");
+            }
+        }
+    );
 });
