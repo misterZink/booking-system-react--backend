@@ -1,10 +1,11 @@
 
-const axios = require('axios');
+
 const express = require("express");
 const app = express();
 const PORT = 3001;
 const router = express.Router();
 const bodyParser = require('body-parser');
+const axios = require('axios');
 
 const cors = require("cors");
 
@@ -81,9 +82,9 @@ app.post('/registerCustomer', function (req, res) {
 
   database.query(
     "INSERT INTO customers\
-    (username, company_name, company_or_private, org_number, personal_id_number, first_name, last_name, phone_number, password)\
+    (mail, company_name, is_company, org_number, personal_id_number, first_name, last_name, phone_number, password)\
     VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?)", [
-      userName,
+      req.body.email,
       req.body.Company, 
       req.body.customerType,
       req.body.CompanyID, 
@@ -101,4 +102,21 @@ app.post('/registerCustomer', function (req, res) {
       }
     }
   );
+});
+
+
+
+app.delete("/delete/:id", (req, res) => {
+  const id = req.params.id
+
+  console.log(id)
+  database.query("DELETE FROM customers WHERE mail = ?;", 
+  id, (err, result) => {
+    if (err) {
+      console.log(err);
+    } else {
+      console.log("Deleted")
+      res.send(result);
+    }
+  });
 });
