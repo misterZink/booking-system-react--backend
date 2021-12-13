@@ -120,3 +120,11 @@ app.delete("/delete/:id", (req, res) => {
     }
   });
 });
+
+app.get("/getBookings", (req, res) => {
+  const sqlSelect = "SELECT * FROM customers AS c\
+  INNER JOIN bookings ON c.customer_id = bookings.customer_id;"
+  database.query(sqlSelect, (err, result) => {
+    res.send(result)
+  })
+});
