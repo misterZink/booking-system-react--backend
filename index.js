@@ -2,24 +2,18 @@ const PORT = 3001
 
 const cors = require("cors")
 
-let usingMariadb = false; // TODO: Remember to change this if using MySQL!
-
-let database;
-if (usingMariadb)
-    database = require('mariadb')
-else
-    database = require('mysql')
+const database = require('mariadb')
 
 let express = require('express')
 let session = require('express-session')
 let bodyParser = require('body-parser')
-//const connection = require("mysql");
 
 const pool = database.createPool({
     host: 'localhost',
+    port: '3306', // 3306 or 3307.
     user: 'root',
     password: 'password',
-    database: 'booking_system'
+    database: 'bookingsystem'
 })
 
 let app = express()
@@ -125,15 +119,13 @@ app.post('/registerCustomer', function (req, res) {
 
 app.post('/login', async (request, response) => {
     //console.log(request.body);
+    let mail = request.body.mail, password = request.body.password
 
-    let username = request.body.mail
-    let password = request.body.password
-
-    if (username && password) {
+    if (mail && password) {
         try {
             const connection = await pool.getConnection()
-            const sql = "SELECT * FROM customers WHERE username = ? AND password = ?"
-            const result = await connection.query(sql, [username, password])
+            const sql = "SELECT * FROM customers WHERE mail = ? AND password = ?"
+            const result = await connection.query(sql, [mail, password])
             //console.log(result)
 
             if (result && result.length > 0) {
@@ -155,37 +147,9 @@ app.post('/login', async (request, response) => {
     }
 
     // empty sensitive data
-    username = ""
+    mail = ""
     password = ""
 })
-
-/*async function checkUserExistInDatabase(username, password) {
-    let connection
-    let userExists = false
-    try {
-        connection = await pool.getConnection(); // Grab idle connection or create new connection if all are being used already.
-        const response = await connection.query("SELECT * FROM customers WHERE username = ? AND password = ?", [username, password])
-        //console.log(res)
-        if (response && response.length) {
-            console.log("*** USER EXISTS! ***")
-            // do something
-            userExists = true
-        }
-    } catch (error) {
-        throw error;
-    } finally {
-        if (connection) {
-            await connection.end();
-            console.log("Connection closed.")
-        }
-    }
-
-    // empty sensitive data
-    username = ""
-    password = ""
-
-    return userExists
-}*/
 
 app.listen(PORT, () => {
     console.log(`Server is running on port ${PORT}.`);
