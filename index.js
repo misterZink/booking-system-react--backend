@@ -19,7 +19,7 @@ const pool = database.createPool({
     host: 'localhost',
     user: 'root',
     password: 'password',
-    database: 'bookingsystem'
+    database: 'booking_system'
 })
 
 let app = express()
@@ -38,22 +38,41 @@ app.use(bodyParser.urlencoded({extended: false}))
 app.use(bodyParser.json())
 
 //Routes
-/*app.get("/", (req, res) => {
-    const sqlSelect = "SELECT * FROM  customers;"
+app.get("/", (req, res) => {
+    const sqlSelect = "SELECT * FROM  customers;";
     database.query(sqlSelect, (err, result) => {
-        res.send(result)
-    })
-});*/
+        res.send(result);
+    });
+});
 
-/*app.get('/', function (request, response) {
-    response.sendFile(path.join(__dirname + '/login.html'))
-})*/
+app.post("/bookcleaning", (req, res) => {
+    const {customerID, startDateTime, adress, serviceType, price, message} = req.body;
+
+    const bookingNumber = "7313" // TODO: Ta bort bookingNumber från databas för den känns onödig?
+
+    const bookingQuery =
+        "INSERT INTO `bookings` " +
+        "(`customer_id`, `booking_number`, `start_date_time`, `adress`, `service_type`, `price`, `message`) " +
+        "VALUES (?, ?, ?, ?, ?, ?, ?)";
+
+    pool.query(
+        bookingQuery,
+        [customerID, bookingNumber, startDateTime, adress, serviceType, price, message],
+        (err, result) => {
+            if (err) {
+                console.log(err);
+                res.send("Fail");
+            }
+            res.send("Success");
+        }
+    );
+});
 
 app.post('/bookCustomer', function (req, res) {
     console.log(req.body);
     let userName = req.body.firstName + "." + req.body.lastName
 
-    database.query(
+    pool.query(
         "INSERT INTO customers\
         (username, company_name, org_number, personal_id_number, first_name, last_name, phone_number)\
         VALUES(?, ?, ?, ?, ?, ?, ?)", [
@@ -80,7 +99,7 @@ app.post('/registerCustomer', function (req, res) {
     console.log(req.body);
     let userName = req.body.firstName + "." + req.body.lastName
 
-    database.query(
+    pool.query(
         "INSERT INTO customers\
         (username, company_name, company_or_private, org_number, personal_id_number, first_name, last_name, phone_number, password)\
         VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?)", [

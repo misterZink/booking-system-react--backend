@@ -18,10 +18,18 @@
   },
   "homepage": "https://github.com/carrotunderscore/booking-system-react--backend#readme",
   "dependencies": {
+    "axios": "^0.24.0",
     "body-parser": "^1.19.0",
     "cors": "^2.8.5",
     "express": "^4.17.1",
+    "express-session": "^1.17.2",
+    "mariadb": "^2.5.5",
     "mysql": "^2.18.1",
-    "nodemon": "^2.0.15"
+    "mysql2": "^2.3.3",
+    "nodemon": "^2.0.15",
+    "sequelize": "^6.12.0-alpha.1"
+  },
+  "devDependencies": {
+    "lite-server": "^2.6.1"
   }
 }
