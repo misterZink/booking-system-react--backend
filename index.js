@@ -7,10 +7,11 @@ const database = require('mariadb')
 let express = require('express')
 let session = require('express-session')
 let bodyParser = require('body-parser')
+//const connection = require("mysql");
 
 const pool = database.createPool({
     host: 'localhost',
-    port: '3306', // 3306 or 3307.
+    port: '3307', // 3306 or 3307.
     user: 'root',
     password: 'password',
     database: 'bookingsystem'
@@ -39,27 +40,26 @@ app.get("/", (req, res) => {
     });
 });
 
-app.post("/bookcleaning", (req, res) => {
+app.post("/bookcleaning", async (req, res) => {
     const {customerID, startDateTime, adress, serviceType, price, message} = req.body;
-
-    const bookingNumber = "7313" // TODO: Ta bort bookingNumber från databas för den känns onödig?
-
     const bookingQuery =
         "INSERT INTO `bookings` " +
-        "(`customer_id`, `booking_number`, `start_date_time`, `adress`, `service_type`, `price`, `message`) " +
-        "VALUES (?, ?, ?, ?, ?, ?, ?)";
+        "(`customer_id`, `start_date_time`, `adress`, `service_type`, `price`, `message`) " +
+        "VALUES (?, ?, ?, ?, ?, ?)";
 
-    pool.query(
+    const connection = await pool.getConnection()
+    const result = await connection.query(
         bookingQuery,
-        [customerID, bookingNumber, startDateTime, adress, serviceType, price, message],
-        (err, result) => {
-            if (err) {
-                console.log(err);
-                res.send("Fail");
-            }
-            res.send("Success");
-        }
+        [customerID, startDateTime, adress, serviceType, price, message]
     );
+
+    if (result.affectedRows === 1) {
+        console.log("*** Data was added ***")
+        res.send("Success")
+    } else {
+        console.log("*** Error ***")
+        res.send("Fail")
+    }
 });
 
 app.post('/bookCustomer', function (req, res) {
