@@ -1,11 +1,5 @@
-const PORT = 3001
-
-
-const express = require("express");
-const app = express();
 const PORT = 3001;
-const router = express.Router();
-const bodyParser = require('body-parser');
+
 const axios = require('axios');
 
 const cors = require("cors")
@@ -26,6 +20,7 @@ const pool = database.createPool({
 })
 
 let app = express()
+const router = express.Router();
 app.use(session({
     secret: 'secret',
     resave: 'true',
@@ -99,7 +94,6 @@ app.post('/bookCustomer', function (req, res) {
 
 app.post('/registerCustomer', function (req, res) {
   console.log(req.body);
-  let userName = req.body.firstName + "." + req.body.lastName
 
   database.query(
     "INSERT INTO customers\
@@ -206,7 +200,10 @@ app.delete("/delete/:id", (req, res) => {
 app.get("/getBookings", (req, res) => {
   const sqlSelect = "SELECT * FROM customers AS c\
   INNER JOIN bookings ON c.customer_id = bookings.customer_id;"
+
   database.query(sqlSelect, (err, result) => {
     res.send(result)
   })
-});
+})})
+
+
