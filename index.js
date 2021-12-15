@@ -1,5 +1,13 @@
 const PORT = 3001
 
+
+const express = require("express");
+const app = express();
+const PORT = 3001;
+const router = express.Router();
+const bodyParser = require('body-parser');
+const axios = require('axios');
+
 const cors = require("cors")
 
 const database = require('mariadb')
@@ -90,6 +98,29 @@ app.post('/bookCustomer', function (req, res) {
 });
 
 app.post('/registerCustomer', function (req, res) {
+  console.log(req.body);
+  let userName = req.body.firstName + "." + req.body.lastName
+
+  database.query(
+    "INSERT INTO customers\
+    (mail, company_name, is_company, org_number, personal_id_number, first_name, last_name, phone_number, password)\
+    VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?)", [
+      req.body.email,
+      req.body.Company, 
+      req.body.customerType,
+      req.body.CompanyID, 
+      req.body.socialID,
+      req.body.firstName,
+      req.body.lastName,
+      req.body.phoneNumber,
+      req.body.password
+    ],
+    (err, result) => {
+      if (err) {
+        console.log(err);
+      } else {
+        res.send("Values Inserted");
+      }
     console.log(req.body);
     let userName = req.body.firstName + "." + req.body.lastName
 
@@ -153,4 +184,29 @@ app.post('/login', async (request, response) => {
 
 app.listen(PORT, () => {
     console.log(`Server is running on port ${PORT}.`);
+});
+
+
+
+app.delete("/delete/:id", (req, res) => {
+  const id = req.params.id
+
+  console.log(id)
+  database.query("DELETE FROM customers WHERE mail = ?;", 
+  id, (err, result) => {
+    if (err) {
+      console.log(err);
+    } else {
+      console.log("Deleted")
+      res.send(result);
+    }
+  });
+});
+
+app.get("/getBookings", (req, res) => {
+  const sqlSelect = "SELECT * FROM customers AS c\
+  INNER JOIN bookings ON c.customer_id = bookings.customer_id;"
+  database.query(sqlSelect, (err, result) => {
+    res.send(result)
+  })
 });
