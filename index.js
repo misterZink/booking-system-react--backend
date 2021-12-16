@@ -16,7 +16,7 @@ const pool = database.createPool({
     port: '3306', // 3306 or 3307.
     user: 'root',
     password: 'password',
-    database: 'bookingsystem'
+    database: 'booking_system'
 })
 
 let app = express()
