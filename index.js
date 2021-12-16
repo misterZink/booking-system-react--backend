@@ -16,24 +16,44 @@ const pool = database.createPool({
     port: '3306', // 3306 or 3307.
     user: 'root',
     password: 'password',
-    database: 'booking_system'
+    database: 'bookingsystem'
 })
 
+
 let app = express()
-app.use(session({
-    secret: 'secret',
-    resave: 'true',
-    saveUninitialized: true
-}))
+let connection = pool.getConnection();
 
-let corsOptions = {
-    origin: "http://localhost:3000"
-};
 
-app.use(cors(corsOptions));
-app.use(bodyParser.urlencoded({extended: false}))
-app.use(bodyParser.json())
+app.get("/getBookings", (req, res) => {
+    
+    console.log("HEJ")
+    const sqlSelect = "SELECT * FROM customers;" 
+    const test = "AS c INNER JOIN bookings ON c.customer_id = bookings.customer_id;"
+    
+    pool.getConnection()
+    .then(conn => {
+      conn.query("SELECT * FROM customers;")
+        .then((rows) => {
+          console.log(rows);
+          res.send(rows)
+        })
+        .then((res) => {
+          conn.end();
+        })
+        .catch(err => {
+          conn.end();
+        })
+        
+    }).catch(err => {
+    });
 
+})
+
+app.listen(PORT, () => {
+    console.log("Server is running on port " + PORT);
+});
+
+/*
 //Routes
 app.get("/", (req, res) => {
     const sqlSelect = "SELECT * FROM  customers;";
@@ -199,9 +219,7 @@ function verifyPayload(token) {
     return payload
 }
 
-app.listen(PORT, () => {
-    console.log("Server is running on port ${PORT}.");
-});
+
 
 
 app.delete("/delete/:id", (req, res) => {
@@ -218,11 +236,5 @@ app.delete("/delete/:id", (req, res) => {
             }
         });
 });
-
-app.get("/getBookings", (req, res) => {
-    const sqlSelect = "SELECT * FROM customers AS c INNER JOIN bookings ON c.customer_id = bookings.customer_id;"
-
-    pool.query(sqlSelect, (err, result) => {
-        res.send(result)
-    })
-})
+*/
+module.exports = connection
