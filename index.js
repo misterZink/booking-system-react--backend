@@ -18,21 +18,75 @@ const pool = database.createPool({
     password: 'password',
     database: 'bookingsystem'
 })
-
-
 let app = express()
 let connection = pool.getConnection();
 
+var corsOptions = {
+    origin: "http://localhost:3000"
+};
+
+app.listen(PORT, () => {
+    console.log("Server is running on port " + PORT);
+});
+
+app.use(cors(corsOptions));
+// If you don't parse the body of the request then undefined will be returned
+app.use(express.json());
+app.use(express.urlencoded({ extended: false }));
+
+app.post("/registerCustomer", function (req, res) {
+    try{
+        pool.getConnection()
+        .then(conn => {
+
+            conn.query("INSERT INTO customers(\
+                company_name, \
+                is_company, \
+                personal_id_number, \
+                first_name, \
+                last_name, \
+                phone_number, \
+                password, \
+                mail\
+                )\
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?)", [
+                    req.body.companyName, 
+                    req.body.customerType, 
+                    req.body.socialID, 
+                    req.body.firstName, 
+                    req.body.lastName, 
+                    req.body.phoneNumber,       
+                    req.body.password, 
+                    req.body.email
+                ])
+                .catch(err => {
+                    console.log("--------------------------------------------------------------------------------------------------------------------------------------------------------------------------")
+                    console.log(err); 
+                    console.log("--------------------------------------------------------------------------------------------------------------------------------------------------------------------------")
+
+                    //conn.end();
+                  })
+                .then((rows) => {
+                    res.send(rows)
+                   
+                })
+        })
+    }catch(error){
+        console.log("ERROR")
+    }
+    
+})
 
 app.get("/getBookings", (req, res) => {
     
     console.log("HEJ")
-    const sqlSelect = "SELECT * FROM customers;" 
-    const test = "AS c INNER JOIN bookings ON c.customer_id = bookings.customer_id;"
+    const sqlSelect = "SELECT * FROM customers INNER JOIN bookings ON customers.customer_id = bookings.customer_id;"
+
+    const sql = "SELECT * FROM customers;"
     
     pool.getConnection()
     .then(conn => {
-      conn.query("SELECT * FROM customers;")
+      conn.query(sql)
         .then((rows) => {
           console.log(rows);
           res.send(rows)
@@ -48,12 +102,12 @@ app.get("/getBookings", (req, res) => {
     });
 
 })
-
-app.listen(PORT, () => {
-    console.log("Server is running on port " + PORT);
-});
-
 /*
+
+
+
+
+
 //Routes
 app.get("/", (req, res) => {
     const sqlSelect = "SELECT * FROM  customers;";
@@ -111,34 +165,7 @@ app.post('/bookCustomer', function (req, res) {
     );
 });
 
-app.post("/registerCustomer", function (req, res) {
-    console.log(req.body);
-    let userName = req.body.firstName + "." + req.body.lastName;
 
-    pool.query(
-        "INSERT INTO customers\
-            (username, company_name, company_or_private, org_number, personal_id_number, first_name, last_name, phone_number, password)\
-            VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?)",
-        [
-            userName,
-            req.body.Company,
-            req.body.customerType,
-            req.body.CompanyID,
-            req.body.socialID,
-            req.body.firstName,
-            req.body.lastName,
-            req.body.phoneNumber,
-            req.body.password,
-        ],
-        (err, result) => {
-            if (err) {
-                console.log(err);
-            } else {
-                res.send("Values Inserted");
-            }
-        }
-    );
-});
 
 
 app.post('/login', async (request, response) => {
@@ -200,27 +227,6 @@ app.post('/login', async (request, response) => {
     mail = ""
     password = ""
 })
-
-function generateToken(mail) {
-    // HMAC SHA256
-    const token = jwt.sign({mail: mail}, process.env.TOKEN_SECRET)
-    console.log(`The token is: ${token}`)
-
-    return token;
-
-    //return jwt.sign(mail, process.env.TOKEN_SECRET, { expiresIn: '1800s' }, null);
-}
-
-function verifyPayload(token) {
-    // HMAC SHA256
-    const payload = jwt.verify(token, process.env.TOKEN_SECRET)
-    console.log(`The verified payload is: ${JSON.stringify(payload)}`) // iat: Issued AT: Unix time when created.
-
-    return payload
-}
-
-
-
 
 app.delete("/delete/:id", (req, res) => {
     const id = req.params.id
