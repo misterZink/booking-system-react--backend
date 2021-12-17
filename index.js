@@ -26,6 +26,7 @@ function generateToken(mail) {
   //return jwt.sign(mail, process.env.TOKEN_SECRET, { expiresIn: '1800s' }, null);
 }
 
+
 function verifyPayload(token) {
   // HMAC SHA256
   const payload = jwt.verify(token, process.env.TOKEN_SECRET);
@@ -47,7 +48,88 @@ let corsOptions = {
   origin: "http://localhost:3000",
 };
 
+app.listen(PORT, () => {
+    console.log("Server is running on port " + PORT);
+});
+
 app.use(cors(corsOptions));
+// If you don't parse the body of the request then undefined will be returned
+app.use(express.json());
+app.use(express.urlencoded({ extended: false }));
+
+app.post("/registerCustomer", function (req, res) {
+    try{
+        pool.getConnection()
+        .then(conn => {
+
+            conn.query("INSERT INTO customers(\
+                company_name, \
+                is_company, \
+                personal_id_number, \
+                first_name, \
+                last_name, \
+                phone_number, \
+                password, \
+                mail\
+                )\
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?)", [
+                    req.body.companyName, 
+                    req.body.customerType, 
+                    req.body.socialID, 
+                    req.body.firstName, 
+                    req.body.lastName, 
+                    req.body.phoneNumber,       
+                    req.body.password, 
+                    req.body.email
+                ])
+                .catch(err => {
+                    console.log("--------------------------------------------------------------------------------------------------------------------------------------------------------------------------")
+                    console.log(err); 
+                    console.log("--------------------------------------------------------------------------------------------------------------------------------------------------------------------------")
+
+                    //conn.end();
+                  })
+                .then((rows) => {
+                    res.send(rows)
+                   
+                })
+        })
+    }catch(error){
+        console.log("ERROR")
+    }
+    
+})
+
+app.get("/getBookings", (req, res) => {
+    
+    console.log("HEJ")
+    const sqlSelect = "SELECT * FROM customers INNER JOIN bookings ON customers.customer_id = bookings.customer_id;"
+
+    const sql = "SELECT * FROM customers;"
+    
+    pool.getConnection()
+    .then(conn => {
+      conn.query(sql)
+        .then((rows) => {
+          console.log(rows);
+          res.send(rows)
+        })
+        .then((res) => {
+          conn.end();
+        })
+        .catch(err => {
+          conn.end();
+        })
+        
+    }).catch(err => {
+    });
+
+})
+
+
+
+
+
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
 
@@ -138,34 +220,8 @@ app.post("/bookCustomer", function (req, res) {
   );
 });
 
-app.post("/registerCustomer", function (req, res) {
-  console.log(req.body);
-  let userName = req.body.firstName + "." + req.body.lastName;
 
-  pool.query(
-    "INSERT INTO customers\
-            (username, company_name, company_or_private, org_number, personal_id_number, first_name, last_name, phone_number, password)\
-            VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?)",
-    [
-      userName,
-      req.body.Company,
-      req.body.customerType,
-      req.body.CompanyID,
-      req.body.socialID,
-      req.body.firstName,
-      req.body.lastName,
-      req.body.phoneNumber,
-      req.body.password,
-    ],
-    (err, result) => {
-      if (err) {
-        console.log(err);
-      } else {
-        res.send("Values Inserted");
-      }
-    }
-  );
-});
+
 
 app.post("/login", async (request, response) => {
   console.log(request.body);
@@ -200,6 +256,16 @@ app.post("/login", async (request, response) => {
           console.log("*** Token or payload is null ***");
           response.send("There was an error with your token 1.");
         }
+    } else {
+        console.log("null username of password")
+        response.send("Please type a username and password.")
+        response.end()
+    }
+
+    // empty sensitive data
+    mail = ""
+    password = ""
+})
 
         // empty sensitive data
         token = "";
@@ -235,6 +301,7 @@ app.delete("/delete/:id", (req, res) => {
     }
   });
 });
+
 
 app.get("/getBookings", (req, res) => {
   const sqlSelect =
