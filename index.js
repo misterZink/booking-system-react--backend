@@ -264,18 +264,20 @@ app.post("/login", async (request, response) => {
 });
 
 
-app.delete("/delete/:id", (req, res) => {
+app.delete("/deleteCustomer/:id", (req, res) => {
     const id = req.params.id;
-
+    try{
+        pool.getConnection()
+        .then(conn => {
+            conn.query("DELETE FROM customers WHERE mail = ?;", id)
+        })
+    }catch(err){
+        console.log("--------------------------------------------------------------------------------------------------------------------------------------------------------------------------")
+        console.log(err)
+        console.log("--------------------------------------------------------------------------------------------------------------------------------------------------------------------------")
+    }
     console.log(id);
-    database.query("DELETE FROM customers WHERE mail = ?;", id, (err, result) => {
-        if (err) {
-            console.log(err);
-        } else {
-            console.log("Deleted");
-            res.send(result);
-        }
-    });
+   
 });
 
 
