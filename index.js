@@ -85,23 +85,26 @@ app.post("/registerCustomer", function (req, res) {
 })
 
 app.get("/getBookings", (req, res) => {
-
-    console.log("HEJ")
-    const sqlSelect = "SELECT * FROM customers INNER JOIN bookings ON customers.customer_id = bookings.customer_id;"
+    console.log("GETBOOKINGS: ")
+    const sqlSelect = "SELECT first_name, last_name, mail, adress, start_date_time, service_type, price, message, status, is_company, org_number FROM customers INNER JOIN bookings ON customers.customer_id=bookings.customer_id;"
 
     const sql = "SELECT * FROM customers;"
 
     pool.getConnection()
         .then(conn => {
-            conn.query(sql)
+            conn.query(sqlSelect)
                 .then((rows) => {
                     console.log(rows);
                     res.send(rows)
                 })
                 .then((res) => {
+                    console.log(res);
                     conn.end();
                 })
                 .catch(err => {
+                    console.log("--------------------------------------------------------------------------------------------------------------------------------------------------------------------------")
+                    console.log(err);
+                    console.log("--------------------------------------------------------------------------------------------------------------------------------------------------------------------------")
                     conn.end();
                 })
 
@@ -275,14 +278,4 @@ app.delete("/delete/:id", (req, res) => {
     });
 });
 
-
-app.get("/getBookings", (req, res) => {
-    const sqlSelect =
-        "SELECT * FROM customers AS c\
-        INNER JOIN bookings ON c.customer_id = bookings.customer_id;";
-
-    database.query(sqlSelect, (err, result) => {
-        res.send(result);
-    });
-});
 
