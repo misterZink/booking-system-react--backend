@@ -3,15 +3,15 @@ const database = require("mariadb");
 let express = require("express");
 let session = require("express-session");
 let bodyParser = require("body-parser");
-let jwt = require("jsonwebtoken");
 const dotenv = require("dotenv");
+const tokenTool = require("./token")
 dotenv.config();
 
 const PORT = 3001;
 
 const pool = database.createPool({
     host: "localhost",
-    port: "3306", // 3306 or 3307.
+    port: "3307", // 3306 or 3307.
     user: "root",
     password: "password",
     database: "bookingsystem",
@@ -35,10 +35,7 @@ app.listen(PORT, () => {
 });
 
 app.use(cors(corsOptions));
-// If you don't parse the body of the request then undefined will be returned
-app.use(express.json());
-app.use(express.urlencoded({ extended: false }));
-app.use(bodyParser.urlencoded({ extended: false }));
+app.use(bodyParser.urlencoded({extended: false}));
 app.use(bodyParser.json());
 
 app.post("/registerCustomer", function (req, res) {
@@ -133,6 +130,27 @@ app.post("/customerbookings", async (req, res) => {
     res.send(result);
 });
 
+app.post("/getcustomer", async (req, res) => {
+    const {customerID, customerEmail} = req.body;
+
+
+    const connection = await pool.getConnection();
+    if (customerID != null) {
+        const getCustomerQuery = "SELECT * FROM `customers` WHERE customer_id=?"
+        const result = await connection.query(getCustomerQuery, [customerID]);
+        console.log("id: ", result);
+        res.send(result)
+    } else if (customerEmail != null) {
+        const getCustomerQuery = "SELECT * FROM `customers` WHERE mail=?";
+        const result = await connection.query(getCustomerQuery, [customerEmail]);
+        console.log("mail: ", result);
+        res.send(result);
+    } else {
+        res.send("Fail to get customer");
+    }
+    connection.end();
+})
+
 app.delete("/deletebooking/:id", async (req, res) => {
     const bookingID = req.params.id;
 
@@ -146,7 +164,7 @@ app.delete("/deletebooking/:id", async (req, res) => {
 });
 
 app.post("/bookcleaning", async (req, res) => {
-    const { customerID, startDateTime, adress, serviceType, price, message } =
+    const {customerID, startDateTime, adress, serviceType, price, message} =
         req.body;
     const bookingQuery =
         "INSERT INTO `bookings` " +
@@ -216,16 +234,16 @@ app.post("/login", async (request, response) => {
             const userExists = result && result.length > 0;
             if (userExists) {
                 console.log("*** Username + password exists in db ***");
-                let token = generateToken(mail);
-                let payload = verifyPayload(token); // data contained in token.
+                let token = tokenTool.generateToken(mail);
+                let payload = tokenTool.verifyPayload(token); // data contained in token.
                 console.log(mail);
                 console.log(payload.mail);
 
                 const tokenAndPayloadExists = token && payload;
-                
+
                 if (tokenAndPayloadExists) {
                     const mailIsSame = mail === payload.mail;
-                    
+
                     if (mailIsSame) {
                         console.log("*** Payload is correct. ***");
                         response.send(token);
@@ -260,7 +278,7 @@ app.post("/login", async (request, response) => {
     // empty sensitive data
     mail = "";
     password = "";
-  
+
 });
 
 
@@ -277,7 +295,7 @@ app.delete("/deleteCustomer/:id", (req, res) => {
         console.log("--------------------------------------------------------------------------------------------------------------------------------------------------------------------------")
     }
     console.log(id);
-   
+
 });
 
 
