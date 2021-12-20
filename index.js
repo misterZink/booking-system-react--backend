@@ -3,8 +3,8 @@ const database = require("mariadb");
 let express = require("express");
 let session = require("express-session");
 let bodyParser = require("body-parser");
-let jwt = require("jsonwebtoken");
 const dotenv = require("dotenv");
+const tokenTool = require("./token")
 dotenv.config();
 
 const PORT = 3001;
@@ -234,8 +234,8 @@ app.post("/login", async (request, response) => {
             const userExists = result && result.length > 0;
             if (userExists) {
                 console.log("*** Username + password exists in db ***");
-                let token = generateToken(mail);
-                let payload = verifyPayload(token); // data contained in token.
+                let token = tokenTool.generateToken(mail);
+                let payload = tokenTool.verifyPayload(token); // data contained in token.
                 console.log(mail);
                 console.log(payload.mail);
 
