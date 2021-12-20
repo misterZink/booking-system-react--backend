@@ -17,23 +17,6 @@ const pool = database.createPool({
     database: "bookingsystem",
 });
 
-function generateToken(mail) {
-    // HMAC SHA256
-    const token = jwt.sign({mail: mail}, process.env.TOKEN_SECRET);
-    console.log(`The token is: ${token}`);
-
-    return token;
-    //return jwt.sign(mail, process.env.TOKEN_SECRET, { expiresIn: '1800s' }, null);
-}
-
-function verifyPayload(token) {
-    // HMAC SHA256
-    const payload = jwt.verify(token, process.env.TOKEN_SECRET);
-    console.log(`The verified payload is: ${JSON.stringify(payload)}`); // iat: Issued AT: Unix time when created.
-
-    return payload;
-}
-
 let app = express();
 app.use(
     session({
@@ -47,9 +30,85 @@ let corsOptions = {
     origin: "http://localhost:3000",
 };
 
+app.listen(PORT, () => {
+    console.log("Server is running on port " + PORT);
+});
+
 app.use(cors(corsOptions));
 app.use(bodyParser.urlencoded({extended: false}));
 app.use(bodyParser.json());
+
+app.post("/registerCustomer", function (req, res) {
+    try {
+        pool.getConnection()
+            .then(conn => {
+
+                conn.query("INSERT INTO customers(\
+                company_name, \
+                is_company, \
+                personal_id_number, \
+                first_name, \
+                last_name, \
+                phone_number, \
+                password, \
+                mail\
+                )\
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?)", [
+                    req.body.companyName,
+                    req.body.customerType,
+                    req.body.socialID,
+                    req.body.firstName,
+                    req.body.lastName,
+                    req.body.phoneNumber,
+                    req.body.password,
+                    req.body.email
+                ])
+                    .catch(err => {
+                        console.log("--------------------------------------------------------------------------------------------------------------------------------------------------------------------------")
+                        console.log(err);
+                        console.log("--------------------------------------------------------------------------------------------------------------------------------------------------------------------------")
+
+                        //conn.end();
+                    })
+                    .then((rows) => {
+                        res.send(rows)
+
+                    })
+            })
+    } catch (error) {
+        console.log("ERROR")
+    }
+
+})
+
+app.get("/getBookings", (req, res) => {
+    console.log("GETBOOKINGS: ")
+    const sqlSelect = "SELECT first_name, last_name, mail, adress, start_date_time, service_type, price, message, status, is_company, org_number FROM customers INNER JOIN bookings ON customers.customer_id=bookings.customer_id;"
+
+    const sql = "SELECT * FROM customers;"
+
+    pool.getConnection()
+        .then(conn => {
+            conn.query(sqlSelect)
+                .then((rows) => {
+                    console.log(rows);
+                    res.send(rows)
+                })
+                .then((res) => {
+                    console.log(res);
+                    conn.end();
+                })
+                .catch(err => {
+                    console.log("--------------------------------------------------------------------------------------------------------------------------------------------------------------------------")
+                    console.log(err);
+                    console.log("--------------------------------------------------------------------------------------------------------------------------------------------------------------------------")
+                    conn.end();
+                })
+
+        }).catch(err => {
+        });
+
+})
 
 //Routes
 app.get("/", (req, res) => {
@@ -137,8 +196,8 @@ app.post("/bookCustomer", function (req, res) {
 
     pool.query(
         "INSERT INTO customers\
-            (username, company_name, org_number, personal_id_number, first_name, last_name, phone_number)\
-            VALUES(?, ?, ?, ?, ?, ?, ?)",
+        (username, company_name, org_number, personal_id_number, first_name, last_name, phone_number)\
+        VALUES(?, ?, ?, ?, ?, ?, ?)",
         [
             userName,
             req.body.Company,
@@ -159,42 +218,15 @@ app.post("/bookCustomer", function (req, res) {
     );
 });
 
-app.post("/registerCustomer", function (req, res) {
-    console.log(req.body);
-    let userName = req.body.firstName + "." + req.body.lastName;
-
-    pool.query(
-        "INSERT INTO customers\
-                (username, company_name, company_or_private, org_number, personal_id_number, first_name, last_name, phone_number, password)\
-                VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?)",
-        [
-            userName,
-            req.body.Company,
-            req.body.customerType,
-            req.body.CompanyID,
-            req.body.socialID,
-            req.body.firstName,
-            req.body.lastName,
-            req.body.phoneNumber,
-            req.body.password,
-        ],
-        (err, result) => {
-            if (err) {
-                console.log(err);
-            } else {
-                res.send("Values Inserted");
-            }
-        }
-    );
-});
-
 app.post("/login", async (request, response) => {
     console.log(request.body);
     let mail = request.body.mail,
-        password = request.body.password;
+    password = request.body.password;
 
     if (mail && password) {
+
         try {
+
             const connection = await pool.getConnection();
             const sql = "SELECT * FROM customers WHERE mail = ? AND password = ?";
             const result = await connection.query(sql, [mail, password]);
@@ -208,65 +240,62 @@ app.post("/login", async (request, response) => {
                 console.log(payload.mail);
 
                 const tokenAndPayloadExists = token && payload;
+
                 if (tokenAndPayloadExists) {
                     const mailIsSame = mail === payload.mail;
+
                     if (mailIsSame) {
                         console.log("*** Payload is correct. ***");
                         response.send(token);
-                    } else {
+                    }else {
                         console.log("*** Payload data is not correct! ***");
                         response.send("There was an error with your token 2.");
                     }
-                } else {
+                }else {
                     console.log("*** Token or payload is null ***");
                     response.send("There was an error with your token 1.");
                 }
 
-                // empty sensitive data
-                token = "";
-                payload = "";
-            } else {
-                console.log("*** Username + password does NOT exist in db ***");
-                response.send("Username or password does not exist!");
+            }else {
+                console.log("null username of password")
+                response.send("Please type a username and password.")
             }
-        } catch (err) {
+
+            // empty sensitive data
+            mail = ""
+            password = ""
+        }catch (err) {
             response.send("There was an error while trying to log in!");
             throw err;
-        }
-    } else {
-        console.log("null username of password");
-        response.send("Please type a username and password.");
+            }
+        // empty sensitive data
+        token = "";
+        payload = "";
+    }else {
+    console.log("null username of password");
+    response.send("Please type a username and password.");
     }
-
     // empty sensitive data
     mail = "";
     password = "";
+
 });
 
-app.delete("/delete/:id", (req, res) => {
+
+app.delete("/deleteCustomer/:id", (req, res) => {
     const id = req.params.id;
-
+    try{
+        pool.getConnection()
+        .then(conn => {
+            conn.query("DELETE FROM customers WHERE mail = ?;", id)
+        })
+    }catch(err){
+        console.log("--------------------------------------------------------------------------------------------------------------------------------------------------------------------------")
+        console.log(err)
+        console.log("--------------------------------------------------------------------------------------------------------------------------------------------------------------------------")
+    }
     console.log(id);
-    database.query("DELETE FROM customers WHERE mail = ?;", id, (err, result) => {
-        if (err) {
-            console.log(err);
-        } else {
-            console.log("Deleted");
-            res.send(result);
-        }
-    });
+
 });
 
-app.get("/getBookings", (req, res) => {
-    const sqlSelect =
-        "SELECT * FROM customers AS c\
-      INNER JOIN bookings ON c.customer_id = bookings.customer_id;";
 
-    database.query(sqlSelect, (err, result) => {
-        res.send(result);
-    });
-});
-
-app.listen(PORT, () => {
-    console.log(`Server is running on port ${PORT}.`);
-});
