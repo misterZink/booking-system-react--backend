@@ -1,3 +1,5 @@
+let jwt = require("jsonwebtoken");
+
 function generateToken(mail) {
     // HMAC SHA256
     const token = jwt.sign({mail: mail}, process.env.TOKEN_SECRET)
@@ -14,4 +16,8 @@ function verifyPayload(token) {
     console.log(`The verified payload is: ${JSON.stringify(payload)}`) // iat: Issued AT: Unix time when created.
 
     return payload
+}
+
+module.exports = {
+    generateToken, verifyPayload
 }
