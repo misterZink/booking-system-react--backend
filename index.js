@@ -14,7 +14,7 @@ const PORT = 3001;
 
 const pool = database.createPool({
     host: "localhost",
-    port: "3307", // 3306 or 3307.
+    port: "3306", // 3306 or 3307.
     user: "root",
     password: "password",
     database: "bookingsystem",
@@ -323,10 +323,8 @@ app.delete("/deleteCustomer/:id", (req, res) => {
 
                             pool.getConnection()
                             .then(conn => {
-                                conn.query(`DELETE FROM customers WHERE mail = "?"\
-                                            AND personal_id_number = "?"\
-                                            AND password = "?";`,
-                                email, socialID, encryptedPassword)
+                                conn.query(`DELETE FROM customers WHERE mail = ?`,
+                                email)
                             })
 
                             console.log(email)
@@ -342,22 +340,7 @@ app.delete("/deleteCustomer/:id", (req, res) => {
         console.log(err)
         console.log("--------------------------------------------------------------------------------------------------------------------------------------------------------------------------")
     }
-    /*
-    try{
-        pool.getConnection()
-        .then(conn => {
-            conn.query("DELETE FROM customers WHERE mail = ? \
-            AND personal_id_number = ? \
-            AND password = ? ;"
-            ,email, socialID, password)
-        })
-    }catch(err){
-        console.log("--------------------------------------------------------------------------------------------------------------------------------------------------------------------------")
-        console.log(err)
-        console.log("--------------------------------------------------------------------------------------------------------------------------------------------------------------------------")
-    }
-    */
-    console.log(id);
+   
 
 });
 
