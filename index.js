@@ -5,6 +5,10 @@ let session = require("express-session");
 let bodyParser = require("body-parser");
 let jwt = require("jsonwebtoken");
 const dotenv = require("dotenv");
+
+const {encrypt, decrypt} = require("./encryptionHandler")
+
+
 dotenv.config();
 
 const PORT = 3001;
@@ -42,6 +46,10 @@ app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
 
 app.post("/registerCustomer", function (req, res) {
+    const password = req.body.password
+    const hashedPassword = encrypt(password);
+    console.log(hashedPassword.iv)
+
     try {
         pool.getConnection()
             .then(conn => {
@@ -54,17 +62,19 @@ app.post("/registerCustomer", function (req, res) {
                 last_name, \
                 phone_number, \
                 password, \
-                mail\
+                mail,\
+                iv\
                 )\
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?)", [
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)", [
                     req.body.companyName,
                     req.body.customerType,
                     req.body.socialID,
                     req.body.firstName,
                     req.body.lastName,
                     req.body.phoneNumber,
-                    req.body.password,
-                    req.body.email
+                    hashedPassword.password,
+                    req.body.email,
+                    hashedPassword.iv
                 ])
                     .catch(err => {
                         console.log("--------------------------------------------------------------------------------------------------------------------------------------------------------------------------")
@@ -203,7 +213,7 @@ app.post("/bookCustomer", function (req, res) {
 app.post("/login", async (request, response) => {
     console.log(request.body);
     let mail = request.body.mail,
-    password = request.body.password;
+        password = request.body.password;
 
     if (mail && password) {
 
@@ -222,23 +232,23 @@ app.post("/login", async (request, response) => {
                 console.log(payload.mail);
 
                 const tokenAndPayloadExists = token && payload;
-                
+
                 if (tokenAndPayloadExists) {
                     const mailIsSame = mail === payload.mail;
-                    
+
                     if (mailIsSame) {
                         console.log("*** Payload is correct. ***");
                         response.send(token);
-                    }else {
+                    } else {
                         console.log("*** Payload data is not correct! ***");
                         response.send("There was an error with your token 2.");
                     }
-                }else {
+                } else {
                     console.log("*** Token or payload is null ***");
                     response.send("There was an error with your token 1.");
                 }
 
-            }else {
+            } else {
                 console.log("null username of password")
                 response.send("Please type a username and password.")
             }
@@ -246,38 +256,92 @@ app.post("/login", async (request, response) => {
             // empty sensitive data
             mail = ""
             password = ""
-        }catch (err) {
+        } catch (err) {
             response.send("There was an error while trying to log in!");
             throw err;
-            }
+        }
         // empty sensitive data
         token = "";
         payload = "";
-    }else {
-    console.log("null username of password");
-    response.send("Please type a username and password.");
+    } else {
+        console.log("null username of password");
+        response.send("Please type a username and password.");
     }
     // empty sensitive data
     mail = "";
     password = "";
-  
+
 });
 
 
 app.delete("/deleteCustomer/:id", (req, res) => {
-    const id = req.params.id;
+    const fullInfo = req.params.id.split(":")
+    const email = fullInfo[0]
+    const socialID = fullInfo[1]
+    const password = fullInfo[2]
+    console.log("|-")
+    console.log(email)
+    console.log(socialID)
+    console.log(password)
+    console.log("-|")
+    
+
+    //-------------------------------------------------------------------------------------------------------------
+    try {
+        pool.getConnection()
+            .then(conn => {
+                conn.query(`SELECT mail, personal_id_number, password, iv\
+                            FROM customers\
+                            WHERE mail = "${email}" AND personal_id_number = ${socialID}`)
+                    .then((rows) => {
+                        console.log("Encrypted password: " + rows[0].password)
+                        const encryptedPassword = rows[0].password;
+                        let decryptedPassword = decrypt({
+                            password: rows[0].password,
+                            iv: rows[0].iv
+                        })
+                        console.log("Decrypted password: " + decryptedPassword)
+
+                        if(password === decryptedPassword){
+
+                            pool.getConnection()
+                            .then(conn => {
+                                conn.query(`DELETE FROM customers WHERE mail = "?"\
+                                            AND personal_id_number = "?"\
+                                            AND password = "?";`,
+                                email, socialID, encryptedPassword)
+                            })
+
+                            console.log(email)
+                            console.log(socialID)
+                            console.log(encryptedPassword)
+                            console.log("HEJHEJ")
+                        }
+                        return rows
+                    })
+            })
+    } catch (err) {
+        console.log("--------------------------------------------------------------------------------------------------------------------------------------------------------------------------")
+        console.log(err)
+        console.log("--------------------------------------------------------------------------------------------------------------------------------------------------------------------------")
+    }
+    /*
     try{
         pool.getConnection()
         .then(conn => {
-            conn.query("DELETE FROM customers WHERE mail = ?;", id)
+            conn.query("DELETE FROM customers WHERE mail = ? \
+            AND personal_id_number = ? \
+            AND password = ? ;"
+            ,email, socialID, password)
         })
     }catch(err){
         console.log("--------------------------------------------------------------------------------------------------------------------------------------------------------------------------")
         console.log(err)
         console.log("--------------------------------------------------------------------------------------------------------------------------------------------------------------------------")
     }
-    console.log(id);
-   
+    */
+
 });
+
 
 
